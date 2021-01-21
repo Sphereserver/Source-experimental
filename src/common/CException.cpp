@@ -308,6 +308,7 @@ void _cdecl Signal_Break(int sig = 0)		// signal handler attached when using sec
 
 void _cdecl Signal_Illegal_Instruction(int sig = 0)
 {
+#ifndef __APPLE__
     StackDebugInformation::freezeCallStack(true);
     sigset_t set;
 
@@ -323,7 +324,9 @@ void _cdecl Signal_Illegal_Instruction(int sig = 0)
     }
 
     StackDebugInformation::freezeCallStack(false);
+
     throw CSError(LOGL_FATAL, sig, strsignal(sig));
+#endif
 }
 
 void _cdecl Signal_Children(int sig = 0)

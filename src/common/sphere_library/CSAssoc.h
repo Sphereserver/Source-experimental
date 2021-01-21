@@ -11,7 +11,7 @@
 
 
 #ifndef OFFSETOF			// stddef.h ?
-	#define OFFSETOF(s,m)   	(int)( (byte *)&(((s *)0)->m) - (byte *)0 )
+	#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
 #endif
 
 // -----------------------------

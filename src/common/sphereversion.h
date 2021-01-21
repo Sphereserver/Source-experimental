@@ -46,6 +46,9 @@
 	#else
 		#define SPHERE_VER_FILEOS_STR		"[FreeBSD-32]"
 	#endif
+#elif __APPLE__
+    #define SPHERE_VER_FILEOS                0x0L    // VOS_UNKNOWN
+    #define SPHERE_VER_FILEOS_STR        "[OSX-64]"
 #else
 	#define SPHERE_VER_FILEOS				0x0L	// VOS_UNKNOWN
 	#if defined(_64BITS)

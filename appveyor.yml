@@ -17,19 +17,20 @@ version: 1.1.0.{build}
 image:
   - Visual Studio 2017
   - Ubuntu
+  - macos
 
 # Environmental variables
 environment:
   # Common to all the builds of the matrix
   BUILD_DIR_32: build-32
   BUILD_DIR_64: build-64
+  DOWNLOAD_SCRIPTS_PACK: 1
   FTP_USER:
     secure: zkxiTiVr5wfmALN6TjuhfQ==
   FTP_PASSWORD:
     secure: C21uMb7NoO6R6ILqDeVqrY3W+6Jap5PFqLgUt65BEzU=
   FTP_SERVER:
     secure: ypUVoKvq2e+1urlrXABB5r5XsWuxKXWmvlJpQEe4iNw=
-
 
 # Build scripts
 for:
@@ -80,11 +81,14 @@ for:
       - IF DEFINED APPVEYOR_PULL_REQUEST_NUMBER (appveyor exit)
 
       - ECHO ** Compilation done. Packing the files and uploading to SphereCommunity
-      - mkdir accounts logs save scripts
+      - mkdir accounts logs save
+      - echo && echo "** Geting Sphere X scripts pack." && echo
+      - curl https://github.com/cbnolok/SphereX-Scriptpack/archive/master.zip -L -o scriptspack.zip
+      - 7z x scriptspack.zip
+      - rename SphereX-Scriptpack-master scripts
       - 7z a SphereSvrX-win64-nightly.zip accounts\ logs\ save\ scripts\ "%APPVEYOR_BUILD_FOLDER%\%BUILD_DIR_64%\bin64\Nightly\SphereSvrX64_nightly.exe" "%APPVEYOR_BUILD_FOLDER%\src\sphere.ini" "%APPVEYOR_BUILD_FOLDER%\src\sphereCrypt.ini" "%APPVEYOR_BUILD_FOLDER%\dlls\64\libmysql.dll"
       - 7z a SphereSvrX-win32-nightly.zip accounts\ logs\ save\ scripts\ "%APPVEYOR_BUILD_FOLDER%\%BUILD_DIR_32%\bin\Nightly\SphereSvrX32_nightly.exe" "%APPVEYOR_BUILD_FOLDER%\src\sphere.ini" "%APPVEYOR_BUILD_FOLDER%\src\sphereCrypt.ini" "%APPVEYOR_BUILD_FOLDER%\dlls\32\libmysql.dll"
       - curl -sST "{SphereSvrX-win64-nightly.zip,SphereSvrX-win32-nightly.zip}" -u %FTP_USER%:%FTP_PASSWORD% %FTP_SERVER%
-
     artifacts:
       - path: SphereSvrX-win64-nightly.zip
       - path: SphereSvrX-win32-nightly.zip
@@ -131,10 +135,9 @@ for:
 
       # if we are testing a pull request, building only a version will be sufficient, so stop this script
       - |-
-        if [ -n "${APPVEYOR_PULL_REQUEST_NUMBER}" ]; then
+        if [ "${APPVEYOR_PULL_REQUEST_NUMBER}" ]; then
           exit 0
         fi
-
       - cd ..
 
       - echo && echo "** Setting up MySQL development packages for 32 bits" && echo
@@ -158,11 +161,60 @@ for:
           exit 0
         fi
       - echo && echo "** Compilation done. Packing the files and uploading to SphereCommunity" && echo
-      - mkdir accounts logs save scripts
+      - mkdir accounts logs save
+      - |-
+        if [ "${DOWNLOAD_SCRIPTS_PACK}" ]; then
+          echo && echo "** Geting Sphere X scripts pack." && echo
+          curl https://github.com/cbnolok/SphereX-Scriptpack/archive/master.zip -L -o scriptspack.zip
+          unzip scriptspack.zip
+          mv ./SphereX-Scriptpack-master ./scripts
+        else
+          mkdir scripts
+        fi
       - tar -czf SphereSvrX-linux64-nightly.tar.gz accounts/ logs/ save/ scripts/ "${BUILD_DIR_64}/bin64/SphereSvrX64_nightly" -C src/ sphere.ini sphereCrypt.ini
       - tar -czf SphereSvrX-linux32-nightly.tar.gz accounts/ logs/ save/ scripts/ "${BUILD_DIR_32}/bin/SphereSvrX32_nightly" -C src/ sphere.ini sphereCrypt.ini
       - curl -sST "{SphereSvrX-linux64-nightly.tar.gz,SphereSvrX-linux32-nightly.tar.gz}" -u ${FTP_USER}:${FTP_PASSWORD} ${FTP_SERVER}
-
     artifacts:
       - path: SphereSvrX-linux64-nightly.tar.gz
       - path: SphereSvrX-linux32-nightly.tar.gz
+  - # OSX build
+    matrix:
+      only:
+        - image: macos
+    install:
+      - echo && echo "** Setting up compiler" && echo
+      - export HOMEBREW_NO_AUTO_UPDATE=1
+      - brew install ninja mysql-client
+      - gcc -v && g++ -v && cmake --version
+    # Use our custom script
+    build_script:
+      - echo && echo "** Starting to build 64 bits Nightly version" && echo
+      - mkdir -p "$BUILD_DIR_64"
+      - cd "$BUILD_DIR_64"
+      - cmake -G Ninja ../src -DCMAKE_BUILD_TYPE="Nightly" && cmake --build . || exit 1
+      - cd ..
+    after_build:
+      # if we are testing a pull request, we don't want to upload the build to the host
+      - |-
+        if [ -n "${APPVEYOR_PULL_REQUEST_NUMBER}" ]; then
+          exit 0
+        fi
+      - echo && echo "** Compilation done. Packing the files and uploading to SphereCommunity" && echo
+      - mkdir accounts logs save
+      - |-
+        if [ "${DOWNLOAD_SCRIPTS_PACK}" ]; then
+          echo && echo "** Geting Sphere X scripts pack." && echo
+          curl https://github.com/cbnolok/SphereX-Scriptpack/archive/master.zip -L -o scriptspack.zip
+          unzip scriptspack.zip
+          mv ./SphereX-Scriptpack-master ./scripts
+        else
+          mkdir scripts
+        fi
+      - zip -r SphereSvrX-osx64-nightly.zip accounts/ logs/ save/ scripts/
+      - cd src/
+      - zip ../SphereSvrX-osx64-nightly.zip sphere.ini sphereCrypt.ini
+      - cd "../${BUILD_DIR_64}/bin64"
+      - zip -r ../../SphereSvrX-osx64-nightly.zip *
+      - curl -sST "{SphereSvrX-osx64-nightly.zip}" -u ${FTP_USER}:${FTP_PASSWORD} ${FTP_SERVER}
+    artifacts:
+      - path: SphereSvrX-osx64-nightly.zip

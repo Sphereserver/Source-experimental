@@ -3,6 +3,7 @@
 #include "../game/CServer.h"
 #include "../game/CWorldGameTime.h"
 #include "../sphere/threads.h"
+#include "../sphere/ProfileTask.h"
 #include "packet.h"
 #include "send.h"
 #include "CNetState.h"

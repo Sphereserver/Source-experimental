@@ -6,6 +6,7 @@
 #include "../common/CRect.h"
 #include "../common/CLog.h"
 #include "../sphere/threads.h"
+#include "../sphere/ProfileTask.h"
 #include "chars/CChar.h"
 #include "items/CItem.h"
 #include "items/CItemMultiCustom.h"

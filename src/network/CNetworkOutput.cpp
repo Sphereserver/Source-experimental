@@ -1,6 +1,7 @@
 #include "../game/clients/CClient.h"
 #include "../game/CServerConfig.h"
 #include "../sphere/threads.h"
+#include "../sphere/ProfileTask.h"
 #include "packet.h"
 #include "CNetState.h"
 #include "CNetworkThread.h"

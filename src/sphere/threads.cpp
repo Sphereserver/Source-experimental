@@ -13,8 +13,11 @@
 	#include <process.h>
 	#include <objbase.h>
 #elif !defined(_BSD)
+#ifndef __APPLE__
 	#include <sys/prctl.h>
 #endif
+#endif
+
 
 // number of exceptions after which we restart thread and think that the thread have gone in exceptioning loops
 #define EXCEPTIONS_ALLOWED	10
