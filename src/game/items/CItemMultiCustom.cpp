@@ -81,7 +81,7 @@ CItemMultiCustom::~CItemMultiCustom()
     }
 }
 
-void CItemMultiCustom::BeginCustomize(CClient * pClientSrc)
+void CItemMultiCustom::BeginCustomize(CClient* pClientSrc, bool continueCustomize)
 {
     ADDTOCALLSTACK("CItemMultiCustom::BeginCustomize");
     // enter the given client into design mode for this building
@@ -95,8 +95,12 @@ void CItemMultiCustom::BeginCustomize(CClient * pClientSrc)
         return;
 
     // copy the main design to working, ready for editing
-    CopyDesign(&m_designMain, &m_designWorking);
-    ++ m_designWorking.m_iRevision;
+    if (!continueCustomize)
+    {
+        // copy the main design to working, ready for editing
+        CopyDesign(&m_designMain, &m_designWorking);
+        ++m_designWorking.m_iRevision;
+    }
 
     // client will silently close all open dialogs and let the server think they're still open, so we need to update opened gump counts here
     CDialogDef* pDlg = nullptr;
@@ -287,7 +291,7 @@ void CItemMultiCustom::CommitChanges(CClient * pClientSrc)
                 Args.m_VarsLocal.SetNum("P.Y", pComp->m_item.m_dy);
                 Args.m_VarsLocal.SetNum("P.Z", pComp->m_item.m_dz);
                 Args.m_VarsLocal.SetNum("VISIBLE", pComp->m_item.m_visible);
-                Args.m_pO1 = this;
+		Args.m_pO1 = this;
 
                 const TRIGRET_TYPE iRet = pCharClient->OnTrigger(CTRIG_HouseDesignCommitItem, pCharClient, &Args);
                 if (iRet == TRIGRET_RET_FALSE)
@@ -1479,6 +1483,7 @@ enum
     IMCV_CLEAR,
     IMCV_CLEARFLOOR,
     IMCV_COMMIT,
+    IMCV_CONTINUECUSTOMIZE,
     IMCV_CUSTOMIZE,
     IMCV_ENDCUSTOMIZE,
     IMCV_REMOVEITEM,
@@ -1495,6 +1500,7 @@ lpctstr const CItemMultiCustom::sm_szVerbKeys[IMCV_QTY + 1] =
     "CLEAR",
     "CLEARFLOOR",
     "COMMIT",
+    "CONTINUECUSTOMIZE",
     "CUSTOMIZE",
     "ENDCUSTOMIZE",
     "REMOVEITEM",
@@ -1599,6 +1605,20 @@ bool CItemMultiCustom::r_Verb(CScript & s, CTextConsole * pSrc) // Execute comma
         case IMCV_COMMIT:
         {
             CommitChanges();
+        }
+        break;
+
+        case IMCV_CONTINUECUSTOMIZE:
+        {
+            if (s.HasArgs())
+                pChar = CUID::CharFindFromUID(s.GetArgVal());
+            else if (pSrc)
+                pChar = pSrc->GetChar();
+
+            if (pChar == nullptr || !pChar->IsClientActive())
+                return false;
+
+            BeginCustomize(pChar->GetClientActive(), true);
         }
         break;
 

@@ -95,7 +95,7 @@ private:
     CItemMultiCustom& operator=(const CItemMultiCustom& other);
 
 public:
-    void BeginCustomize(CClient * pClientSrc);
+    void BeginCustomize(CClient* pClientSrc, bool continueCustomize = false);
     void EndCustomize(bool fForce = false);
     void SwitchToLevel(CClient * pClientSrc, uchar iLevel);
     void CommitChanges(CClient * pClientSrc = nullptr);
