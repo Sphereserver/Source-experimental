@@ -3403,9 +3403,9 @@ CRegion * CChar::CanMoveWalkTo( CPointMap & ptDst, bool fCheckChars, bool fCheck
 			if ( m_pNPC && pChar->m_pNPC )	// NPCs can't walk over another NPC
 				return nullptr;
 
-			uiStamReq = 10;
-			if ( IsPriv(PRIV_GM) || pChar->IsStatFlag(STATF_DEAD|STATF_INVISIBLE|STATF_HIDDEN) )
-				uiStamReq = 0;
+			uiStamReq = 10;		// Stam consume for push the char. OSI seem to be 10% and not a fix 10
+			if ( IsPriv(PRIV_GM) || pChar->IsStatFlag(STATF_DEAD) || (pChar->IsStatFlag(STATF_INVISIBLE|STATF_HIDDEN) && !(g_Cfg.m_iRevealFlags & REVEALF_OSILIKEPERSONALSPACE)) )
+				uiStamReq = 0;	// On SPHERE, need 0 stam to reveal someone 
 			else if ( (pPoly && pPoly->m_itSpell.m_spell == SPELL_Wraith_Form) && (GetTopMap() == 0) )		// chars under Wraith Form effect can always walk through chars in Felucca
 				uiStamReq = 0;
 
@@ -3431,21 +3431,23 @@ CRegion * CChar::CanMoveWalkTo( CPointMap & ptDst, bool fCheckChars, bool fCheck
 				return nullptr;
 			}
 			
-			else if (pChar->IsStatFlag(STATF_INVISIBLE) && !(g_Cfg.m_iRevealFlags & REVEALF_OSILIKEPERSONALSPACE) ) {
-                snprintf(pszMsg, STR_TEMPLENGTH, g_Cfg.GetDefaultMsg(DEFMSG_HIDING_STUMBLE), pChar->GetName());
-                pChar->Reveal(STATF_INVISIBLE | STATF_HIDDEN);
+			else if (pChar->IsStatFlag(STATF_INVISIBLE | STATF_HIDDEN) ) {
+				if ((g_Cfg.m_iRevealFlags & REVEALF_OSILIKEPERSONALSPACE))
+					// OSILIKEPERSONALSPACE flag block the reveal but DEFMSG_HIDING_STUMBLE_OSILIKE is send. To avoid it, simply use return 1 in @PERSONALSPACE 
+					snprintf(pszMsg, STR_TEMPLENGTH, g_Cfg.GetDefaultMsg(DEFMSG_HIDING_STUMBLE_OSILIKE));
+				else 
+				{
+					snprintf(pszMsg, STR_TEMPLENGTH, g_Cfg.GetDefaultMsg(DEFMSG_HIDING_STUMBLE), pChar->GetName());
+					if (!fPathFinding) // When NPC use pathfinding(NPC_AI_PATH) to calculate their destination, char should not be reveal
+						pChar->Reveal(STATF_INVISIBLE | STATF_HIDDEN);
+				}
 			}
-			else if ( pChar->IsStatFlag(STATF_HIDDEN) )
-			{
-                snprintf(pszMsg, STR_TEMPLENGTH, g_Cfg.GetDefaultMsg(DEFMSG_HIDING_STUMBLE), pChar->GetName());
-                pChar->Reveal(STATF_INVISIBLE | STATF_HIDDEN);
-			}
+
 			else if ( pChar->IsStatFlag(STATF_SLEEPING) )
 				snprintf(pszMsg, STR_TEMPLENGTH, g_Cfg.GetDefaultMsg(DEFMSG_MSG_STEPON_BODY), pChar->GetName());
 			else
 				snprintf(pszMsg, STR_TEMPLENGTH, g_Cfg.GetDefaultMsg(DEFMSG_MSG_PUSH), pChar->GetName());
-				// REVEALF_OSILIKEPERSONALSPACE block the reveal but DEFMSG_MSG_PUSH is send. To avoid it, simply use return 1 in @PERSONALSPACE 
-
+			
 			if ( iRet != TRIGRET_RET_FALSE )
 				SysMessage(pszMsg);
 

@@ -2749,3 +2749,7 @@ Must have event, even if it's empty, since it's applied by the source to generat
 - Fixed: Windows console temporarily freezing when it had to show a big number of lines at once.
 - Added: CMake toolchain to compile on Linux using the native architecture, instead of forcing one (Issue #709).
 - Changed: Renamed 32 and 64 bits Linux toolchains to x86 and x86_64, respectively.
+
+20-07-2021, Jhobean
+- Fixed: OSILIKEPERSONALSPACE flag was reveal hidden char when walking on them. Now invisible OR hidden char will not be reveal and sysmessage will appear (Issue #732).
+- Fixed: NPC_AI_PATH no more reveal player when server evaluate if the NPC can walk on the char (Issue #343-734).
